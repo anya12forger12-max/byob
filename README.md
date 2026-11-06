@@ -129,3 +129,12 @@ ________________________________________________________________________________
 1) __Remote Import Encryption__ - encryption for data streams of packages/modules being remotely imported (to maintain confidentiality/authenticity/integrity and prevent any remote code execution vulnerabilities arising from deserialization)
 2) __Transport Types__ - add support for more transport types (HTTP/S, DNS, etc.)
 3) __Bug Fixes__ - fix any bugs/issues
+
+
+## Installation
+
+```bash
+./install.sh
+```
+
+Creates a virtual environment and installs dependencies for both the console app and the web GUI.
