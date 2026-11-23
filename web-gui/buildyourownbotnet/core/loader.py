@@ -3,7 +3,7 @@
 'Loader (Build Your Own Botnet)'
 
 # standard library
-import imp
+from . import imp_compat as imp
 import sys
 import logging
 import contextlib

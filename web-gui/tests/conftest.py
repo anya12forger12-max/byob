@@ -1,4 +1,5 @@
 import os
+import multiprocessing
 import pytest
 import shutil
 from hashlib import md5
@@ -6,6 +7,12 @@ from random import getrandbits
 from datetime import datetime
 from buildyourownbotnet import create_app
 from buildyourownbotnet.models import db, bcrypt, User, Payload, Session, Task, ExfiltratedFile
+
+# Python 3.14 defaults to the 'forkserver' start method, which pickles the
+# Process target.  The dummy payload holds threading.Events (and therefore
+# locks) that cannot be pickled, so keep the historical 'fork' behaviour used
+# by CI (Python 3.11) where the child inherits state directly.
+multiprocessing.set_start_method('fork', force=True)
 
 OUTPUT_DIR = os.path.abspath('buildyourownbotnet/output')
 
