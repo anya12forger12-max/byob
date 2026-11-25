@@ -5,6 +5,7 @@ from wtforms import StringField, PasswordField, SubmitField, BooleanField, Selec
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 
 from buildyourownbotnet.models import User
+from buildyourownbotnet.core.path_safety import is_safe_username
 
 
 class RegistrationForm(FlaskForm):
@@ -15,6 +16,10 @@ class RegistrationForm(FlaskForm):
 	confirm_password = PasswordField('Confirm Password',
 							validators=[DataRequired(), Length(min=8), EqualTo('password')])
 	submit = SubmitField('Sign Up')
+
+	def validate_username(self, username):
+		if not is_safe_username(username.data):
+			raise ValidationError('Use letters, numbers, dots, dashes or underscores only.')
 
 	def validate_email(self, email):
 		if User.query.filter_by(email=email.data).first():

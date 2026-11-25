@@ -271,13 +271,15 @@ def freeze(filename, icon=None, hidden=None, owner=None, operating_system=None, 
     # cd into user's src directory (limitation of pyinstaller docker)
     os.chdir(path)
 
+    # Never interpolate caller-controlled strings into a shell command.
+    if operating_system not in ('win', 'nix') or architecture not in ('x32', 'amd64', 'i386'):
+        raise ValueError('invalid operating system or architecture for payload generation')
+    docker_container = operating_system + '-' + architecture
+
     # cross-compile executable for the specified os/arch using pyinstaller docker containers
-    process = subprocess.Popen('docker run -v "$(pwd):/src/" {docker_container}'.format(
-                                src_path=os.path.dirname(path), 
-                                docker_container=operating_system + '-' + architecture), 
-                                0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, 
-                                cwd=path, 
-                                shell=True)
+    process = subprocess.Popen(['docker', 'run', '-v', os.getcwd() + ':/src/', docker_container],
+                                stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                cwd=path)
 
     start_time = time.time()
 
