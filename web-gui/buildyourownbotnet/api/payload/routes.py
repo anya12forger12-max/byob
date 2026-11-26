@@ -29,6 +29,12 @@ def payload_generate():
 		flash('Please select an operating system and architecture to generate a binary executable.', 'warning')
 		return redirect(url_for('main.payloads'))
 
+	# These values are interpolated into a shell command by generators.freeze().
+	# The UI offers a small fixed set; enforce it server-side too.
+	if operating_system not in (None, 'win', 'nix') or architecture not in (None, 'x32', 'amd64', 'i386'):
+		flash('Invalid operating system or architecture.', 'warning')
+		return redirect(url_for('main.payloads'))
+
 	# optional fields
 	encrypt = request.form.get('encrypt') if 'encrypt' in request.form else 0
 	compress = request.form.get('compress') if 'compress' in request.form else 0

