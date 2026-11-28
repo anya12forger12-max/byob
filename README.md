@@ -50,3 +50,14 @@ BYOB is an offensive security framework. Treat it as lab equipment:
 ## License and attribution
 
 Distributed under the **GNU General Public License, version 3** — see [LICENSE](LICENSE). The framework, branding, and documentation originate from [malwaredllc/byob](https://github.com/malwaredllc/byob); upstream copyright and license notices are retained. This repository adds maintenance commits under the same license. Provided without warranty.
+
+## Quick start — 1 or 2 commands
+
+```bash
+./setup.sh          # install dependencies
+./setup.sh run      # start the project (when a run target exists)
+```
+
+`setup.sh` detects this repository's build system and installs the right toolchain
+dependencies. Use `./setup.sh test` to run the available checks. If a project has no
+standard run target, the script prints the correct command from the sections above.
